@@ -1,0 +1,14 @@
+name: gfp-feedback-sim
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.9
+  - numpy
+  - pandas
+  - matplotlib
+  - seaborn
+  - ipython        
+  - jupyterlab     
+  - ipykernel   
