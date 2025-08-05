@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>&ast;&ast;Proposal&colon; Evolutionary Learning via Feedback-Controlled Moran Process&ast;&ast;</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex/dist/katex.min.css">
+<link href="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h1 id="proposal-evolutionary-learning-via-feedback-controlled-moran-process"><strong>Proposal: Evolutionary Learning via Feedback-Controlled Moran Process</strong></h1>
+<p><em>Authors: Dan Weinberg, Benel Levy, Bar Cohen</em></p>
+<h2 id="1-introduction"><strong>1. Introduction</strong></h2>
+<p>Understanding how microbial populations adapt to dynamic environments remains a central question in evolutionary biology. Recent developments in synthetic biology enable experimental setups that impose artificial feedback mechanisms, making it possible to simulate selection pressures that are designed rather than naturally occurring. In this proposal, we investigate how short-term environmental feedback can lead to adaptation patterns that resemble “learning,” even in the absence of cognition or neural systems.</p>
+<p>This work centers on a synthetic microbial system in which <em>Saccharomyces cerevisiae</em> (yeast) populations are genetically engineered to link expression of a reporter gene (GFP) with environmental temperature. A custom microfluidic device allows temperature to be dynamically regulated based on the population's mean GFP expression. When more cells express GFP, the system responds by reducing the temperature—an external reward mechanism that mimics reinforcement learning.</p>
+<p>Our goal is to simulate this process using a stochastic evolutionary framework and assess under what conditions this population-level feedback leads to stable, adaptive expression patterns. This integrates evolutionary dynamics, phenotypic switching, fitness landscapes, and environmental coupling into a coherent computational model.</p>
+<hr>
+<h2 id="2-biological-context"><strong>2. Biological Context</strong></h2>
+<p>The wet-lab experiment features yeast cells engineered with GFP under the control of the <strong>JEN1</strong> promoter, fused via a T2A ribosomal skip sequence. This allows the GFP reporter to be expressed separately from the JEN1 protein, which naturally responds to carbon source availability but is unrelated to temperature regulation. The synthetic design introduces a <strong>non-natural linkage</strong>: higher GFP expression triggers a <strong>cooling effect</strong> in the microfluidic environment.</p>
+<h3 id="microfluidic-setup">Microfluidic Setup</h3>
+<ul>
+<li><strong>Experimental well</strong>: GFP expression <strong>modulates</strong> temperature via feedback.</li>
+<li><strong>Control well</strong>: Temperature changes identically to the experimental well but is <strong>decoupled</strong> from GFP expression, allowing a clean comparison.</li>
+</ul>
+<p>Cells are initially grown at 30°C, a low-switching, high-fitness environment. After reaching a target population (e.g., 𝑛 = 300), the temperature is raised to 39°C to induce stress. From this point, the feedback loop begins: more High-GFP cells → cooler temperature → enhanced group fitness → selection for High-GFP expression.</p>
+<hr>
+<h2 id="3-theoretical-foundation"><strong>3. Theoretical Foundation</strong></h2>
+<p>Our model draws from several key concepts in evolutionary theory:</p>
+<ul>
+<li><strong>Moran process</strong>: A finite-population stochastic model used to simulate reproduction and death events with selection.</li>
+<li><strong>Feedback-modulated fitness</strong>: Fitness is not static but depends on environmental variables influenced by population-level behaviors.</li>
+<li><strong>Phenotypic switching</strong>: Cells can change states (Low-GFP ⇌ High-GFP) with probabilities dependent on environmental conditions.</li>
+<li><strong>Frequency-dependent selection</strong>: The collective behavior of the population influences individual payoffs—a situation ripe for cooperative dilemmas.</li>
+<li><strong>Stochasticity and bottlenecks</strong>: Random events, such as periodic dilution (washes), introduce drift and founder effects that shape lineage evolution.</li>
+</ul>
+<hr>
+<h2 id="4-simulation-logic"><strong>4. Simulation Logic</strong></h2>
+<p>Our computational model simulates discrete time steps using a <strong>modular, event-driven design</strong>. Each cycle performs the following:</p>
+<h3 id="41-reproduction-death-dynamics">4.1 Reproduction-Death Dynamics</h3>
+<ul>
+<li>A cell is chosen for <strong>reproduction</strong>, with probability proportional to its <strong>temperature-modulated fitness</strong>.</li>
+<li>Another cell is chosen uniformly at random to <strong>die</strong>, keeping the population size constant (classic Moran update).</li>
+</ul>
+<h3 id="42-phenotypic-switching">4.2 Phenotypic Switching</h3>
+<ul>
+<li>
+<p>Each cell has a probability <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mtext>switch</mtext></msub><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">P_{\text{switch}}(T)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">switch</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mclose">)</span></span></span></span> of changing phenotype.</p>
+</li>
+<li>
+<p>The switching probability <strong>decreases</strong> as the system approaches 30°C, mimicking stabilization around optimal environmental conditions:</p>
+<p class="katex-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>P</mi><mtext>switch</mtext></msub><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo><mo>=</mo><msub><mi>P</mi><mi>max</mi><mo>⁡</mo></msub><mo>⋅</mo><mrow><mo fence="true">(</mo><mfrac><mrow><mi>T</mi><mo>−</mo><mn>30</mn></mrow><mn>9</mn></mfrac><mo fence="true">)</mo></mrow></mrow><annotation encoding="application/x-tex">P_{\text{switch}}(T) = P_{\max} \cdot \left( \frac{T - 30}{9} \right)
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">switch</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mop mtight"><span class="mtight">m</span><span class="mtight">a</span><span class="mtight">x</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:2.4em;vertical-align:-0.95em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3603em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord">9</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord">30</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span></span></span></span></span></p>
+<p>where <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>P</mi><mi>max</mi><mo>⁡</mo></msub></mrow><annotation encoding="application/x-tex">P_{\max}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">P</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.1514em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mop mtight"><span class="mtight">m</span><span class="mtight">a</span><span class="mtight">x</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span></span></span></span> is the maximal switching rate at 39°C.</p>
+</li>
+</ul>
+<h3 id="43-environmental-feedback">4.3 Environmental Feedback</h3>
+<ul>
+<li>
+<p>The environmental temperature is updated based on the current fraction of High-GFP cells:</p>
+<p class="katex-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>T</mi><mo stretchy="false">(</mo><mi>t</mi><mo stretchy="false">)</mo><mo>=</mo><msup><mn>39</mn><mo>∘</mo></msup><mi>C</mi><mo>−</mo><mrow><mo fence="true">(</mo><mfrac><mtext>High-GFP</mtext><mi>N</mi></mfrac><mo>⋅</mo><mi>X</mi><mo fence="true">)</mo></mrow></mrow><annotation encoding="application/x-tex">T(t) = 39^\circ C - \left( \frac{\text{High-GFP}}{N} \cdot X \right)
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mopen">(</span><span class="mord mathnormal">t</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.8074em;vertical-align:-0.0833em;"></span><span class="mord">3</span><span class="mord"><span class="mord">9</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.7241em;"><span style="top:-3.113em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mbin mtight">∘</span></span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right:0.07153em;">C</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:2.4em;vertical-align:-0.95em;"></span><span class="minner"><span class="mopen delimcenter" style="top:0em;"><span class="delimsizing size3">(</span></span><span class="mord"><span class="mopen nulldelimiter"></span><span class="mfrac"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:1.3714em;"><span style="top:-2.314em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span><span style="top:-3.23em;"><span class="pstrut" style="height:3em;"></span><span class="frac-line" style="border-bottom-width:0.04em;"></span></span><span style="top:-3.677em;"><span class="pstrut" style="height:3em;"></span><span class="mord"><span class="mord text"><span class="mord">High-GFP</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.686em;"><span></span></span></span></span></span><span class="mclose nulldelimiter"></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">X</span><span class="mclose delimcenter" style="top:0em;"><span class="delimsizing size3">)</span></span></span></span></span></span></span></p>
+<ul>
+<li><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi></mrow><annotation encoding="application/x-tex">N</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span></span></span></span>: current population size</li>
+<li><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>X</mi></mrow><annotation encoding="application/x-tex">X</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.07847em;">X</span></span></span></span>: feedback sensitivity parameter (empirically tunable)</li>
+</ul>
+</li>
+</ul>
+<p>This function can be generalized to a <strong>nonlinear form</strong> (e.g., sigmoid or stepwise), allowing investigation of how feedback curvature affects learning-like dynamics.</p>
+<h3 id="44-fitness-calculation">4.4 Fitness Calculation</h3>
+<p>Each cell’s reproductive success is temperature- and phenotype-dependent:</p>
+<p class="katex-block"><span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>F</mi><mtext>cell</mtext></msub><mo>=</mo><mi>f</mi><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo><mo>⋅</mo><msub><mi>σ</mi><mtext>phenotype</mtext></msub></mrow><annotation encoding="application/x-tex">F_{\text{cell}} = f(T) \cdot \sigma_{\text{phenotype}}
+</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8333em;vertical-align:-0.15em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.13889em;">F</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">cell</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7167em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">phenotype</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span></span></span></span></span></p>
+<ul>
+<li><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>f</mi><mo stretchy="false">(</mo><mi>T</mi><mo stretchy="false">)</mo><mo>=</mo><mn>1</mn><mo>+</mo><mi>α</mi><mo stretchy="false">(</mo><mn>30</mn><mo>−</mo><mi>T</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">f(T) = 1 + \alpha (30 - T)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.10764em;">f</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.0037em;">α</span><span class="mopen">(</span><span class="mord">30</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.13889em;">T</span><span class="mclose">)</span></span></span></span>: linear increase in growth rate as temperature decreases</li>
+<li><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mtext>phenotype</mtext></msub><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\sigma_{\text{phenotype}} &lt; 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8252em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right:0.03588em;">σ</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3361em;"><span style="top:-2.55em;margin-left:-0.0359em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord text mtight"><span class="mord mtight">phenotype</span></span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span>: penalty for High-GFP cells, modeling the <strong>metabolic cost</strong> of expressing GFP in sugar-rich environments</li>
+</ul>
+<hr>
+<h2 id="5-experimental-features-and-extensions"><strong>5. Experimental Features and Extensions</strong></h2>
+<h3 id="51-wash-events-bottlenecks">5.1 Wash Events (Bottlenecks)</h3>
+<p>Though not essential due to constant media flow, optional simulation of <strong>periodic washes</strong> can model:</p>
+<ul>
+<li><strong>Dilution effects</strong> (nutrient renewal)</li>
+<li><strong>Founder effects</strong> (drift from random sampling)</li>
+</ul>
+<p>These can profoundly affect population structure, especially under strong selection.</p>
+<h3 id="52-control-vs-experimental-wells">5.2 Control vs Experimental Wells</h3>
+<p>The model includes a <strong>control simulation</strong> where temperature follows the same trajectory as the feedback-coupled system but without GFP influence. This allows us to isolate <strong>feedback-driven adaptation</strong> from passive thermosensitive gene expression.</p>
+<hr>
+<h2 id="6-research-questions"><strong>6. Research Questions</strong></h2>
+<ol>
+<li>
+<p><strong>Feedback Form</strong></p>
+<ul>
+<li>How do linear, sigmoidal, or stepwise feedback curves alter the convergence speed and stability of High-GFP expression?</li>
+</ul>
+</li>
+<li>
+<p><strong>Negative Feedback (&quot;Punishment&quot;)</strong></p>
+<ul>
+<li>What happens when GFP expression <em>increases</em> temperature (inverse reward)? Can the system learn to avoid maladaptive phenotypes?</li>
+</ul>
+</li>
+<li>
+<p><strong>Stochasticity and Initial Conditions</strong></p>
+<ul>
+<li>How sensitive is adaptation to the number and type of initial founder cells?</li>
+</ul>
+</li>
+<li>
+<p><strong>Background Noise</strong></p>
+<ul>
+<li>Introduce environment-independent phenotype switching or mutation to mimic biochemical noise.</li>
+</ul>
+</li>
+<li>
+<p><strong>Public Good Dynamics</strong></p>
+<ul>
+<li>Is High-GFP a form of cooperative behavior? Can this be interpreted through evolutionary game theory (e.g., Snowdrift Game)?</li>
+</ul>
+</li>
+<li>
+<p><strong>Parameter Sensitivity</strong></p>
+<ul>
+<li>Which model parameters (feedback strength, switching rates, cost coefficients) most influence emergent learning behavior?</li>
+</ul>
+</li>
+<li>
+<p><strong>Experimental Validation</strong></p>
+<ul>
+<li>How closely do simulation outputs match the microfluidic experiment? What are the limits of inference given measurement noise and experimental variation?</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 id="7-generalization-and-broader-implications"><strong>7. Generalization and Broader Implications</strong></h2>
+<p>This model, though specialized, lays groundwork for broader applications:</p>
+<ul>
+<li>Adaptive control in synthetic biology</li>
+<li>Evolutionary learning in immune systems or quorum sensing</li>
+<li>Frameworks for studying <strong>group-level adaptation</strong> without cognition</li>
+</ul>
+<p>It also invites critical reflection on whether terms like “learning” are metaphorical or functionally meaningful in non-neural biological collectives.</p>
+<hr>
+<h2 id="8-conclusion"><strong>8. Conclusion</strong></h2>
+<p>We present a novel model integrating phenotypic plasticity, environmental feedback, and evolutionary dynamics to explore how simple biological systems can exhibit behaviors akin to learning. Using a feedback-controlled Moran process and validated by real-time microfluidic experiments, this project probes the boundary between adaptation and cognition-free learning. Through both simulation and experimentation, we aim to better understand the role of feedback in shaping evolutionary trajectories—offering insight into how organisms might exploit structured environments to achieve adaptive outcomes.</p>
+
+            <script async src="https://cdn.jsdelivr.net/npm/katex-copytex@latest/dist/katex-copytex.min.js"></script>
+            
+        </body>
+        </html>

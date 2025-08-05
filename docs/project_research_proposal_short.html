@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title></title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <p><strong>Project Proposal: Evolutionary Learning in a Feedback-Controlled Moran Process</strong></p>
+<p><em>Authors: Dan Weinberg, Benel Levy, Bar Cohen</em></p>
+<p>In this project, we investigate how microbial populations can exhibit adaptive behavior that resembles learning through engineered environmental feedback. Our model is inspired by an ongoing wet-lab experiment in which genetically engineered <em>Saccharomyces cerevisiae</em> (yeast) cells express GFP under the control of the JEN1 promoter, a gene unrelated to temperature regulation. In a microfluidic chip, the average GFP expression in a population controls environmental temperature in real-time—creating a synthetic feedback loop where GFP expression is rewarded by cooler conditions.</p>
+<p>We simulate this system using a stochastic Moran process with a fixed population of 300 cells. Each cell exists in one of two phenotypic states: Low-GFP or High-GFP. At each time step, a reproduction event (fitness-weighted), a death event (random), and a phenotype switching event (temperature-dependent) are applied. Temperature is updated based on the fraction of High-GFP cells, using both linear and nonlinear feedback functions to reflect different biological scenarios. Fitness is modulated by temperature and penalized for High-GFP expression due to metabolic cost.</p>
+<p>Our goals are to explore how the structure of environmental feedback shapes adaptation, and whether collective dynamics can produce behavior analogous to reinforcement learning. We also examine the robustness of such behavior under noise, bottlenecks (e.g., periodic &quot;wash&quot; events), and varying initial conditions.</p>
+<p>The project will address several key questions:</p>
+<ul>
+<li>How does the shape of the feedback function (linear vs. sigmoid vs. stepwise) affect the stability and speed of adaptation?</li>
+<li>Can populations evolve to avoid maladaptive phenotypes if the feedback is reversed (i.e., High-GFP increases temperature)?</li>
+<li>How do stochastic switching, founder effects, and bottlenecks impact the likelihood of fixation or loss of High-GFP traits?</li>
+<li>Does the system exhibit frequency-dependent selection or public good dynamics, where cooperative behavior (cooling via GFP) benefits all?</li>
+<li>How well do simulation outcomes align with empirical data from the experimental microfluidic setup?</li>
+</ul>
+<p>This project aims to bridge theoretical evolutionary modeling with synthetic biology, using a minimal system to probe the boundary between adaptation and learning-like dynamics in biological collectives.</p>
+
+            
+            
+        </body>
+        </html>
