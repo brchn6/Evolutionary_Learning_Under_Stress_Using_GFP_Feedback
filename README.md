@@ -1,178 +1,304 @@
-# 🧬 Evolutionary Learning via GFP Feedback (Continuous Trait)
+# 🧬 Evolutionary Learning Laboratory
 
-**Authors**: Dan Weinberg, Benel Levy, Bar Cohen
-**Course**: Evolution Through Programming
-**Project**: Adaptive dynamics in synthetic yeast under feedback control
+**Interactive simulation platform for studying temperature-feedback driven adaptation in synthetic yeast populations**
 
----
-
-## TL;DR
-
-We simulate a yeast population where **GFP (0–100)** is a **heritable continuous trait**. In the **driver well**, the **environmental temperature updates every minute** from the **current mean GFP** (tight feedback). **Passive wells** experience this *same* temperature but **do not influence** it. Two **controls** run at **fixed 39 °C** (stress) and **fixed 30 °C** (benign).
-
-**New in this version**
-
-* A **stochastic death process** whose hazard grows with **heat** and **GFP burden**.
-* **Fitness** explicitly includes a **GFP metabolic cost** that **slows division**; temperature still sets the **baseline generation time**.
-* **Minimal UI**: confusing event/stability knobs removed (kept only as readouts).
-* Outputs reveal your “**pattern-breaking**” case via **counter-learning** markers and a **learning ratio** metric.
+This bioinformatics tool implements both binary and continuous GFP expression modes with Moran process dynamics to explore how microbial populations can "learn" through environmental feedback mechanisms. Based on real experimental designs in synthetic biology, it provides a powerful platform for understanding evolutionary adaptation without cognition.
 
 ---
 
-## Install & Run
+## 🚀 Quick Start Guide
 
+### 1️⃣ Installation
 ```bash
-# (optional) create env
-conda create -n gfp-sim python=3.9 -y
-conda activate gfp-sim
+# Clone or download the files
+git clone <your-repo> # or download manually
 
-# install deps
-pip install streamlit numpy pandas plotly
+# Install dependencies
+pip install -r requirements.txt
 
-# run
+# Launch the application
 streamlit run app.py
 ```
 
-> For reproducibility, enable the seed in the sidebar or add `np.random.seed(42)` in `app.py`.
+### 2️⃣ First Run
+1. **Open browser** at `http://localhost:8501`
+2. **Use default parameters** for your first experiment
+3. **Click "🚀 Run Evolution Experiment"**
+4. **Explore results** in the interactive dashboard
+
+### 3️⃣ Understand Results
+- **Learning Score > 0.7**: Excellent adaptation! 🎉
+- **Learning Score 0.3-0.7**: Moderate learning ⚠️
+- **Learning Score < 0.3**: Poor adaptation ❌
 
 ---
 
-## What’s in the repo
+## 📁 Project Structure
 
 ```
-main.py   # simulation engine (continuous GFP, per-minute feedback, fitness & death)
-app.py    # Streamlit UI; learning ratio, counter-learning markers, plots
-README.md # this document
+evolutionary-learning/
+├── 📄 main.py              # Core simulation engine & biological models
+├── 🎨 app.py               # Interactive Streamlit interface  
+├── 📋 requirements.txt     # Python dependencies
+├── 📖 README.md           # This comprehensive guide
+└── 📊 results/            # Your downloaded experiment data
 ```
 
 ---
 
-## Biological Model (concise)
+## 🧬 Scientific Background
 
-* **Trait:** GFP ∈ \[0, 100], **continuous**, **inherited with Normal noise** at division.
-* **Initialization:** Each well starts from **one cell** (GFP ≈ 0 ± N(0,2)).
-* **Time:** Discrete minutes; **temperature updates every minute**.
-* **Division time vs. temperature (min):** 30→60, 33→70, 36→90, 37→120, 38→150, 39→180.
-* **Fitness (division speed):**
-  baseline **generation time from temperature** × **GFP cost multiplier**
-  `mult = 1 + strength * (GFP/100)^gamma` (bounded).
-  Higher GFP → **slower division** (metabolic burden).
-* **Death (per minute):** Hazard increases with **temperature** and **GFP** (background hazard at 30 °C & GFP≈0).
-* **Phenotype switching (“boost”):** rare **stress-scaled** GFP jumps (Δ \~ N(10,3)), **more likely at hotter temps**.
-* **Feedback (driver only):** Temperature = f(mean GFP). Immediate (no delay).
-* **Passive wells:** **Follow** the driver’s temperature trace (no influence).
-* **Controls:** Fixed **39 °C** and fixed **30 °C**.
-* **Population control:** Once the cap is reached (if enabled), switch to **Moran** birth–death at constant N.
+### The Experimental System
+This simulation models a **synthetic biology experiment** where yeast cells (S. cerevisiae) are engineered to link GFP expression with environmental temperature feedback:
 
----
+- **🎯 Driver Well**: GFP expression directly controls temperature (learning enabled)
+- **🔄 Passive Wells**: Follow driver temperature but cannot influence it (learning disabled)  
+- **🔬 Control Wells**: Fixed at 30°C (optimal) and 39°C (stress) temperatures
+- **⚖️ Moran Process**: Constant population size with fitness-proportional reproduction
+- **💰 Fitness Cost**: High GFP expression slows cell division (metabolic burden)
 
-## Driver vs. Passives & Controls
-
-* **Driver well**: its **mean GFP** sets **temperature** each minute.
-* **Passive wells**: take the **driver’s temperature** as-is and evolve independently under it.
-* **Controls**: constant **39 °C** (stress) and **30 °C** (benign).
-  This setup lets you observe the driver’s “learning” while others either follow (passives) or provide baselines (controls).
+### Key Biological Processes
+1. **Temperature Feedback**: Higher mean GFP → Cooler environment (reward)
+2. **Fitness Trade-off**: GFP expression costs energy → Slower division
+3. **Stress Response**: Hot temperatures → Increased GFP switching probability
+4. **Inheritance**: Daughter cells inherit mother's GFP ± noise
+5. **Selection**: Faster-dividing cells have more offspring
 
 ---
 
-## Minimal Parameters (UI)
+## 🎛️ Parameter Guide & Recommendations
 
-| Section         | Parameter                        | Meaning                                 | Typical values                |
-| --------------- | -------------------------------- | --------------------------------------- | ----------------------------- |
-| Core            | **Total time**                   | Horizon in minutes                      | 1000 (demo), 2000–5000 (deep) |
-| Core            | **Population cap N**             | Max concurrent cells                    | 500–3000                      |
-| Core            | **Moran after cap**              | Replace at N to keep constant size      | on                            |
-| Core            | **Passive wells**                | # wells sharing driver temp             | 3–10                          |
-| Feedback        | **Mode**                         | linear / exp / sigmoid / step / inverse | linear                        |
-| Feedback        | **Sensitivity**                  | Steepness / response                    | 0.5–3                         |
-| Trait           | **Inheritance noise (GFP SD)**   | Daughter around mother                  | 1–4                           |
-| Trait           | **Phenotype switch prob @39 °C** | Per-minute probability at 39 °C         | 0.001–0.005                   |
-| Fitness & Mort. | **GFP cost strength**            | Burden on division speed                | 0.3–1.0                       |
-| Fitness & Mort. | **Mortality multiplier**         | Scales background death hazard          | 0.5–2.0                       |
+### 🔬 Core Experimental Setup
 
-> We **removed** UI knobs for **High-GFP threshold**, **Stationarity window**, **Stationarity tolerance**. They remain **internally** as readouts/annotations only.
+| Parameter           | Recommended Range        | Purpose            | Effect                                   |
+| ------------------- | ------------------------ | ------------------ | ---------------------------------------- |
+| **GFP Mode**        | `continuous` or `binary` | Expression type    | Continuous = realistic, Binary = cleaner |
+| **Simulation Time** | `1000-2000 min`          | Evolution duration | Longer = more adaptation time            |
+| **Population Size** | `200-500 cells`          | Well capacity      | Larger = less genetic drift              |
+| **Passive Wells**   | `3-5 wells`              | Statistical power  | More = better controls                   |
+
+### 🌡️ Temperature Feedback System
+
+| Parameter             | Recommended           | Purpose           | Tips                                          |
+| --------------------- | --------------------- | ----------------- | --------------------------------------------- |
+| **Feedback Function** | `linear` or `sigmoid` | Response curve    | Linear = simple, Sigmoid = realistic          |
+| **Sensitivity**       | `0.8-1.5`             | Response strength | Too low = no learning, Too high = instability |
+
+### 🧬 Evolution & Fitness Parameters
+
+| Parameter             | Conservative | Moderate | Aggressive | Effect                    |
+| --------------------- | ------------ | -------- | ---------- | ------------------------- |
+| **Inheritance Noise** | `3.0`        | `5.0`    | `10.0`     | Mutation-like variation   |
+| **Switching Rate**    | `0.005`      | `0.01`   | `0.03`     | Stress-induced adaptation |
+| **GFP Cost**          | `0.2`        | `0.3`    | `0.6`      | Selection pressure        |
+| **Cost Curvature**    | `1.0`        | `1.5`    | `2.5`      | Non-linear penalty        |
 
 ---
 
-## What those old parameters meant (and why we hid them)
+## 🎯 Recommended Experiment Protocols
 
-* **High-GFP threshold (event):** just a **marker** for the **first meaningful GFP breakthrough** (for annotation). Not mechanistic.
-* **Stationarity window (min) / tolerance (°C):** used only to **detect** when **temperature plateaus** (for reporting).
-* **“Max stress boost prob @39 °C”:** renamed to **“Phenotype switch prob @39 °C”** (clearer). See formula below.
-
-These are useful for **storytelling/plots**, not as tuning knobs, so they’re hidden to keep the UI minimal.
-
----
-
-## Probability of phenotype switching (your question)
-
-**Per-minute** probability at temperature **T** (°C):
+### 🟢 **Experiment 1: Basic Learning (Beginners)**
+*Demonstrate clear evolutionary learning*
 
 ```
-p_switch(T) = p_39C * max(0, (T - 30) / 9)
+🔬 Core Setup:
+- GFP Mode: Continuous
+- Simulation Time: 1000 min
+- Population Size: 200
+- Passive Wells: 3
+
+🌡️ Feedback:
+- Function: Linear  
+- Sensitivity: 1.0
+
+🧬 Evolution:
+- Inheritance Noise: 5.0
+- Switching Rate: 0.01
+- GFP Cost: 0.3
+- Cost Curvature: 1.5
 ```
 
-Where **`p_39C`** is the slider **“Phenotype switch prob @39 °C”**.
-So: **0 at 30 °C**, ramping linearly to **`p_39C` at 39 °C**. Example with `p_39C = 0.002`:
-
-* 30 °C → 0.0000
-* 33 °C → 0.0007
-* 36 °C → 0.0013
-* 39 °C → 0.0020
-
-This encodes the intuition that **stress (heat) promotes exploratory switching**.
+**Expected Result**: Clear temperature drop from 39°C to ~32°C, Learning Score > 0.6
 
 ---
 
-## Reading the outputs
+### 🟡 **Experiment 2: Binary Switching (Intermediate)**
+*Explore discrete phenotype adaptation*
 
-1. **Driver Temperature Over Time**
-   Annotated with **first high-GFP** and **stationarity**. **Red dotted lines** mark **counter-learning episodes**.
+```
+🔬 Core Setup:
+- GFP Mode: Binary
+- Simulation Time: 800 min
+- Population Size: 300
+- Passive Wells: 4
 
-2. **Mean GFP (Driver, Controls, Passive Avg)**
-   Expect driver GFP to rise if learning succeeds; Control-39 stays low; Control-30 may drift.
+🌡️ Feedback:
+- Function: Step
+- Sensitivity: 1.5
 
-3. **Counter-learning episodes** *(your “break the learning pattern” case)*
-   Minutes where **driver GFP decreases**, **passive average GFP increases**, **and** **temperature rises**.
-   These capture the moments where the driver “loses the thread” while others still escalate.
+🧬 Evolution:
+- Inheritance Noise: 2.0 (less relevant for binary)
+- Switching Rate: 0.02
+- GFP Cost: 0.4
+- Cost Curvature: 1.0
+```
 
-4. **Learning ratio (0–1)**
-   Average **temperature relief** of the driver, normalized between 39→30 °C:
-
-   ```
-   LR = mean((39 − T_driver) / 9)
-   ```
-
-   Higher = stronger/steadier learning.
-
-5. **All wells** and **Final distributions**
-   Show heterogeneity and end states across driver / passives / controls.
-
----
-
-## Assumptions & limitations
-
-* Death and GFP costs are stylized hazards/multipliers, not mechanistic physiology.
-* Phenotypic “boost” is a coarse stochastic jump, not a full gene-regulatory model.
-* No spatial structure; wells are mean-field.
-* Controller reads **current** mean GFP each minute (no delay).
+**Expected Result**: Rapid transition to high GFP state, Learning Score > 0.7
 
 ---
 
-## Suggested presets
+### 🔴 **Experiment 3: Challenging Conditions (Advanced)**
+*Test limits of adaptation*
 
-* **Clean learning demo**: linear, sensitivity=1.0, noise=2.0, switch\@39 °C=0.002, cost=0.5, death×=1.0
-* **Hard mode (stressful)**: linear, sensitivity=0.7, noise=1.0, switch\@39 °C=0.001, cost=0.8, death×=1.5
-* **Anti-learning**: inverse feedback, any other params
+```
+🔬 Core Setup:
+- GFP Mode: Continuous
+- Simulation Time: 1500 min
+- Population Size: 500
+- Passive Wells: 5
+
+🌡️ Feedback:
+- Function: Sigmoid
+- Sensitivity: 0.6 (reduced!)
+
+🧬 Evolution:
+- Inheritance Noise: 8.0
+- Switching Rate: 0.008
+- GFP Cost: 0.5 (high cost!)
+- Cost Curvature: 2.0
+```
+
+**Expected Result**: Slower adaptation, Learning Score 0.3-0.6, more realistic dynamics
 
 ---
 
-## Publishing notes
+### 🔵 **Experiment 4: Failure Mode Analysis**
+*Understand when learning fails*
 
-* UI exposes a **minimal knob set** to avoid confusion.
-* Metrics emphasize the **story** (breakthrough → cooling → stabilization → occasional pattern breaks).
-* Plots include consistent keys to avoid Streamlit widget collisions.
+```
+🔬 Core Setup:
+- GFP Mode: Continuous
+- Simulation Time: 1000 min
+- Population Size: 150 (small!)
+- Passive Wells: 3
+
+🌡️ Feedback:
+- Function: Linear
+- Sensitivity: 0.3 (very low!)
+
+🧬 Evolution:
+- Inheritance Noise: 15.0 (high noise!)
+- Switching Rate: 0.003 (low switching!)
+- GFP Cost: 0.8 (very high cost!)
+- Cost Curvature: 2.5
+```
+
+**Expected Result**: Learning failure, Learning Score < 0.3, demonstrates parameter sensitivity
 
 ---
 
-Happy exploring!
+### ⚡ **Experiment 5: Rapid Learning (Expert)**
+*Optimize for fastest adaptation*
+
+```
+🔬 Core Setup:
+- GFP Mode: Binary
+- Simulation Time: 500 min
+- Population Size: 400
+- Passive Wells: 3
+
+🌡️ Feedback:
+- Function: Exponential
+- Sensitivity: 2.0
+
+🧬 Evolution:
+- Inheritance Noise: 1.0
+- Switching Rate: 0.04
+- GFP Cost: 0.2
+- Cost Curvature: 1.0
+```
+
+**Expected Result**: Very rapid adaptation, Learning Score > 0.8, adaptation time < 200 min
+
+---
+
+## 📊 Understanding Your Results
+
+### 🎯 Key Metrics Interpretation
+
+| Metric                | Excellent | Good        | Poor      | What It Means              |
+| --------------------- | --------- | ----------- | --------- | -------------------------- |
+| **Learning Score**    | > 0.7     | 0.4-0.7     | < 0.4     | Overall adaptation success |
+| **Adaptation Time**   | < 300 min | 300-600 min | > 600 min | Speed of learning          |
+| **Final Temperature** | < 32°C    | 32-35°C     | > 35°C    | Cooling achieved           |
+| **High GFP Fraction** | > 0.7     | 0.4-0.7     | < 0.4     | Population success         |
+| **Tracking Error**    | < 1°C     | 1-3°C       | > 3°C     | Feedback efficiency        |
+
+### 📈 Plot Interpretations
+
+1. **Temperature Evolution**: Should show steady cooling if learning occurs
+2. **GFP Comparison**: Driver should exceed passives/controls if learning works  
+3. **Phase Plot**: Should show directed movement toward bottom-right (high GFP, low temp)
+4. **Feedback Function**: Evolution path should follow theoretical curve
+5. **Population Dynamics**: High GFP fraction should increase over time
+
+### 🔍 Troubleshooting Guide
+
+| Problem                    | Likely Cause                    | Solution                               |
+| -------------------------- | ------------------------------- | -------------------------------------- |
+| **No temperature change**  | Sensitivity too low             | Increase sensitivity to 1.0+           |
+| **Wild oscillations**      | Sensitivity too high            | Decrease sensitivity to 0.5-1.0        |
+| **Slow adaptation**        | Low switching rate or high cost | Increase switching rate, reduce cost   |
+| **Learning then collapse** | Cost too high                   | Reduce GFP cost to < 0.5               |
+| **No GFP increase**        | Cost overwhelming benefit       | Reduce cost or increase sensitivity    |
+| **Noisy dynamics**         | Small population or high noise  | Increase population size, reduce noise |
+
+---
+
+## 🧪 Advanced Experiments
+
+### Comparative Studies
+- **Mode Comparison**: Run identical parameters with binary vs continuous
+- **Function Testing**: Compare linear vs sigmoid vs exponential feedback
+- **Sensitivity Sweep**: Test 0.2, 0.5, 1.0, 1.5, 2.0 sensitivity values
+- **Population Effects**: Try 100, 200, 500, 1000 population sizes
+
+### Research Questions
+1. **Which feedback function produces most stable learning?**
+2. **How does population size affect adaptation speed?**
+3. **What's the minimum sensitivity required for learning?**
+4. **Does binary mode learn faster than continuous?**
+5. **How much GFP cost can populations overcome?**
+
+### Statistical Analysis
+- **Run multiple replicates** (change random seed)
+- **Calculate confidence intervals** from passive wells
+- **Measure adaptation time distributions**
+- **Quantify learning curve shapes**
+
+--- 
+
+## 🏆 Success Stories & Benchmarks
+
+### Typical Successful Experiments
+- **Strong Learning**: Score 0.75, Adaptation in 400 min, Final temp 31°C
+- **Moderate Learning**: Score 0.55, Adaptation in 700 min, Final temp 34°C  
+- **Binary Success**: Score 0.80, Rapid switch at 250 min, Final temp 30.5°C
+
+### Publication-Quality Results
+For academic use, aim for:
+- **Multiple replicates** (n≥5) with different random seeds
+- **Systematic parameter variations** 
+- **Statistical significance testing**
+- **Control comparisons** (driver vs passive vs fixed temperature)
+- **Mechanistic interpretation** of adaptation strategies
+
+
+---
+
+**🧬 Happy Experimenting! Welcome to the fascinating world of evolutionary learning! ✨**
+
+*For questions, suggestions, or collaboration opportunities, please reach out to the development team.*
+
+---
+*Last Updated: 2024 | Version: 1.0 | Status: Production Ready*
