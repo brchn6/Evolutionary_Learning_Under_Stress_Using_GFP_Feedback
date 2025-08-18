@@ -1,24 +1,33 @@
 """
-Evolutionary Learning Simulation - Core Logic
-===========================================
+Evolutionary Learning Simulation - Core Logic (Controls Fixed at 30°C & 39°C)
+============================================================================
 
 This module contains the core biological models and simulation logic for studying
 temperature-feedback driven adaptation in synthetic yeast populations.
 
-Key Components:
-- GFP expression models (binary and continuous)
-- Cell class with fitness and division dynamics
-- Population class with Moran process
-- Temperature feedback functions
-- Evolution experiment runner
+Update summary (controls lock-in):
+- Control wells are HARD-CODED to 30.0 °C and 39.0 °C for the entire simulation.
+  They never use feedback, smoothing, or start-up behavior.
+- Driver still uses feedback + inertia as before.
+- Export now includes control temperatures for verification.
+
+STRICT Moran birth–death process:
+- Each time step performs exactly one Moran event: 1 birth (fitness-proportional parent)
+  and 1 death (uniform victim), keeping population size constant.
+- Trait dynamics (background drift + temp-driven switching) update before fitness is
+  computed each step, so fitness reflects current phenotypes.
+- Daughter fitness is computed immediately at birth for the current temperature.
+
+Smoothing / metrics features retained:
+- Optional no-cliff startup via SimulationParams.start_at_max_temp
+- Temperature inertia SimulationParams.temp_inertia for smooth dT/dt (driver only)
+- Metrics can ignore an initial burn-in window via SimulationParams.metric_burn_in
 """
 
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass
 from typing import List, Tuple, Optional, Dict, Any
-import json
-import logging
 
 # ===============================
 # Configuration Classes
@@ -28,13 +37,13 @@ import logging
 class GFPParams:
     """Parameters for GFP expression dynamics and cellular processes"""
     # Binary mode thresholds
-    low_threshold: float = 25.0
-    high_threshold: float = 75.0
+    low_threshold: float = 35.0
+    high_threshold: float = 95.0
     # Continuous mode bounds
     min_val: float = 0.0
     max_val: float = 100.0
     # Inheritance parameters
-    inherit_sd: float = 5.0
+    inherit_sd: float = 2.5
     # Switching probabilities (temperature dependent)
     switch_prob_base: float = 0.01
     switch_boost_mean: float = 15.0
@@ -49,18 +58,26 @@ class GFPParams:
 
 @dataclass
 class SimulationParams:
-    """Parameters for overall simulation setup"""
-    total_time: int = 1000
-    population_size: int = 300
-    time_step: float = 1.0
-    # Well configuration
+    # Population & timing
+    population_size: int = 200
+    total_time: int = 1000      # minutes
+    time_step: int = 1          # minutes
     num_passive_wells: int = 3
-    # Temperature feedback
-    feedback_mode: str = "linear"
+
+    # Temperature feedback (applies to DRIVER only)
+    feedback_mode: str = "linear"   # 'linear', 'sigmoid', 'step', 'exponential'
     feedback_sensitivity: float = 1.0
     base_temp: float = 30.0
     max_temp: float = 39.0
-    # Random seed for reproducibility
+
+    # Smoothing / starting behavior (applies to DRIVER only)
+    temp_inertia: float = 0.2       # 0<inertia<=1; smaller = smoother
+    start_at_max_temp: bool = True  # if False: first step starts at target (no jump)
+
+    # Metrics
+    metric_burn_in: int = 0         # minutes to ignore when computing adaptation time
+
+    # Reproducibility
     random_seed: Optional[int] = None
 
 # ===============================
@@ -77,6 +94,7 @@ class Cell:
         self._last_temp = 39.0  # Cache for efficiency
 
     def _calculate_base_generation_time(self, temperature: float) -> float:
+        # 30->39 °C mapped to [0,1]
         temp_normalized = np.clip((temperature - 30.0) / 9.0, 0.0, 1.0)
         base_time = 60.0 + 120.0 * (temp_normalized ** 2)
         return base_time
@@ -95,16 +113,10 @@ class Cell:
         self.generation_time = base_time * cost_multiplier
         self._last_temp = temperature
 
-    def can_divide(self, dt: float = 1.0) -> bool:
-        if self.age <= 0:
-            return False
-        hazard_rate = 0.02
-        relative_age = self.age / max(self.generation_time, 1.0)
-        prob = 1.0 - np.exp(-hazard_rate * relative_age * dt)
-        return np.random.random() < prob
-
     def divide(self, current_time: float, params: GFPParams) -> 'Cell':
+        """Create a daughter with inheritance noise/switching behavior baked in."""
         if self.mode == "binary":
+            # Binary inheritance with small chance of flipping state at division
             switch_prob = 0.05
             if np.random.random() < switch_prob:
                 daughter_gfp = params.high_threshold if self.gfp < 50 else params.low_threshold
@@ -113,9 +125,11 @@ class Cell:
         else:
             noise = np.random.normal(0, params.inherit_sd)
             daughter_gfp = np.clip(self.gfp + noise, params.min_val, params.max_val)
+
         self.age = 0.0
         daughter = Cell(daughter_gfp, current_time, self.mode)
-        daughter.generation_time = self.generation_time
+        # Compute daughter's generation time immediately at current temperature
+        daughter.update_fitness(self._last_temp, params)
         return daughter
 
     def phenotype_switch(self, temperature: float, params: GFPParams, dt: float = 1.0) -> bool:
@@ -148,7 +162,7 @@ def feedback_temperature(mean_gfp: float, mode: str = "linear",
     if mode == "linear":
         cooling_factor = x
     elif mode == "sigmoid":
-        k = 5.0
+        k = 10.0
         cooling_factor = 1.0 / (1.0 + np.exp(-k * (x - 0.5)))
     elif mode == "step":
         threshold = 0.5
@@ -161,7 +175,7 @@ def feedback_temperature(mean_gfp: float, mode: str = "linear",
     return float(np.clip(temperature, base_temp, max_temp))
 
 # ===============================
-# Population Simulation
+# Population Simulation (STRICT Moran)
 # ===============================
 
 class Population:
@@ -184,7 +198,6 @@ class Population:
         """Initialize population with low GFP cells"""
         for _ in range(self.target_size):
             if self.mode == "binary":
-                # Keep the population in a 'low' state but don't force temp via GFP
                 initial_gfp = self.params.low_threshold
             else:
                 initial_gfp = max(0, np.random.normal(self.params.baseline_gfp, 3.0))
@@ -205,32 +218,57 @@ class Population:
                 'high_gfp_fraction': high_gfp_fraction, 'mean_generation_time': mean_gen_time}
 
     def step(self, current_time: float, temperature: float, dt: float = 1.0) -> Dict[str, int]:
+        """One STRICT Moran event: exactly one birth and one death.
+
+        Order:
+          1) Update traits (age, background drift, switching)
+          2) Update fitness from current temperature
+          3) Choose a parent fitness-proportionally; create daughter
+          4) Kill one random cell; replace with daughter
+          5) Record stats
+        """
         if not self.cells:
+            self.history['time'].append(current_time)
+            self.history['mean_gfp'].append(0.0)
+            self.history['std_gfp'].append(0.0)
+            self.history['population_size'].append(0)
+            self.history['temperature'].append(temperature)
+            self.history['high_gfp_fraction'].append(0.0)
+            self.history['mean_generation_time'].append(0.0)
+            self.history['births'].append(0)
+            self.history['deaths'].append(0)
+            self.history['switches'].append(0)
             return {'births': 0, 'deaths': 0, 'switches': 0}
-        births = deaths = switches = 0
+
+        # 1) Trait updates before fitness
+        switches = 0
         for cell in self.cells:
             cell.age += dt
-            cell.update_fitness(temperature, self.params)
             if self.mode == "continuous":
                 cell.background_dynamics(self.params, dt)
             if cell.phenotype_switch(temperature, self.params, dt):
                 switches += 1
-        if len(self.cells) > 0:
-            fitness_weights = [1.0 / max(cell.generation_time, 1.0) for cell in self.cells]
-            total_fitness = sum(fitness_weights)
-            if total_fitness > 0:
-                cells_to_add = []
-                for cell in self.cells:
-                    if cell.can_divide(dt):
-                        daughter = cell.divide(current_time, self.params)
-                        cells_to_add.append(daughter)
-                        births += 1
-                for daughter in cells_to_add:
-                    if len(self.cells) >= self.target_size:
-                        victim_idx = np.random.randint(len(self.cells))
-                        self.cells.pop(victim_idx)
-                        deaths += 1
-                    self.cells.append(daughter)
+
+        # 2) Update fitness for all cells at current temperature
+        for cell in self.cells:
+            cell.update_fitness(temperature, self.params)
+
+        # 3) Fitness-proportional parent selection
+        fitness_weights = np.array([1.0 / max(cell.generation_time, 1.0) for cell in self.cells], dtype=float)
+        total_fitness = fitness_weights.sum()
+        p = None if total_fitness <= 0 or not np.isfinite(total_fitness) else fitness_weights / total_fitness
+
+        parent_idx = np.random.choice(len(self.cells), p=p)
+        parent = self.cells[parent_idx]
+        daughter = parent.divide(current_time, self.params)
+        daughter.update_fitness(temperature, self.params)  # ensure exact match to current temp
+
+        # 4) Uniform random death
+        victim_idx = np.random.randint(len(self.cells))
+        self.cells[victim_idx] = daughter
+        births, deaths = 1, 1
+
+        # 5) Record stats
         stats = self._calculate_population_stats(temperature)
         self.history['time'].append(current_time)
         self.history['mean_gfp'].append(stats['mean_gfp'])
@@ -242,13 +280,14 @@ class Population:
         self.history['births'].append(births)
         self.history['deaths'].append(deaths)
         self.history['switches'].append(switches)
+
         return {'births': births, 'deaths': deaths, 'switches': switches}
 
     def get_final_gfp_distribution(self) -> List[float]:
         return [cell.gfp for cell in self.cells]
 
 # ===============================
-# Experiment Runner
+# Experiment Runner (driver uses feedback; controls fixed)
 # ===============================
 
 def run_evolution_experiment(sim_params: SimulationParams,
@@ -256,39 +295,75 @@ def run_evolution_experiment(sim_params: SimulationParams,
                              mode: str = "continuous") -> Dict[str, Any]:
     """
     Run complete evolution experiment with driver, passive, and control wells.
+
+    Driver startup & smoothing:
+    - First-minute HOLD:
+        If start_at_max_temp=True, we hold max_temp at t=0 then begin smoothing at t=1.
+        If start_at_max_temp=False, we hold the initial feedback target at t=0.
+    - Temperature inertia from t>=1:
+        driver_temp <- prev_temp + temp_inertia * (target_temp - prev_temp)
+
+    CONTROLS:
+    - control_30 is fixed at EXACTLY 30.0 °C every step.
+    - control_39 is fixed at EXACTLY 39.0 °C every step.
     """
     if sim_params.random_seed is not None:
         np.random.seed(sim_params.random_seed)
 
+    # Fixed control temperatures (do not depend on sim_params)
+    CONTROL_TEMP_30 = 30.0
+    CONTROL_TEMP_39 = 39.0
+
+    # Create wells
     driver = Population(sim_params.population_size, mode, gfp_params, "driver")
     passives = [Population(sim_params.population_size, mode, gfp_params, f"passive_{i+1}")
                 for i in range(sim_params.num_passive_wells)]
     control_30 = Population(sim_params.population_size, mode, gfp_params, "control_30")
     control_39 = Population(sim_params.population_size, mode, gfp_params, "control_39")
 
+    # Initial target for driver
+    initial_mean_gfp = np.mean([cell.gfp for cell in driver.cells]) if driver.cells else 0.0
+    target0 = feedback_temperature(
+        initial_mean_gfp,
+        mode=sim_params.feedback_mode,
+        sensitivity=sim_params.feedback_sensitivity,
+        base_temp=sim_params.base_temp,
+        max_temp=sim_params.max_temp
+    )
+
+    # Initialize driver previous temperature according to start_at_max_temp
+    inertia = float(np.clip(sim_params.temp_inertia, 1e-8, 1.0))
+    prev_temp = sim_params.max_temp if sim_params.start_at_max_temp else target0
+
+    # Main loop
     for t in range(0, sim_params.total_time, int(sim_params.time_step)):
         current_time = float(t)
 
-        # NEW: Force the simulation to *start* at the maximum temperature (e.g., 39°C)
+        # Driver temperature schedule
         if t == 0:
-            driver_temp = sim_params.max_temp  # ensures time 0 is 39°C regardless of mode/thresholds
+            driver_temp = prev_temp  # hold at start value for first step
         else:
-            # After t=0, temperature is governed by the feedback function (and thus can only cool)
             driver_mean_gfp = np.mean([cell.gfp for cell in driver.cells]) if driver.cells else 0.0
-            driver_temp = feedback_temperature(
+            target_temp = feedback_temperature(
                 driver_mean_gfp,
                 mode=sim_params.feedback_mode,
                 sensitivity=sim_params.feedback_sensitivity,
                 base_temp=sim_params.base_temp,
                 max_temp=sim_params.max_temp
             )
+            driver_temp = prev_temp + inertia * (target_temp - prev_temp)
+            prev_temp = driver_temp  # update memory
 
         # Update populations
         driver.step(current_time, driver_temp, sim_params.time_step)
+
+        # Passives experience the same temperature schedule as the driver (but no coupling)
         for passive in passives:
             passive.step(current_time, driver_temp, sim_params.time_step)
-        control_30.step(current_time, 30.0, sim_params.time_step)
-        control_39.step(current_time, 39.0, sim_params.time_step)
+
+        # CONTROLS are constant every step (no smoothing/feedback)
+        control_30.step(current_time, CONTROL_TEMP_30, sim_params.time_step)
+        control_39.step(current_time, CONTROL_TEMP_39, sim_params.time_step)
 
     results = {
         'driver': driver.history,
@@ -306,42 +381,65 @@ def run_evolution_experiment(sim_params: SimulationParams,
     return results
 
 # ===============================
-# Analysis & Utilities (unchanged except minor formatting)
+# Analysis & Utilities
 # ===============================
 
 def calculate_learning_metrics(results: Dict[str, Any]) -> Dict[str, float]:
     driver_data = results['driver']
     if not driver_data['time']:
         return {}
+
+    # Access burn-in from SimulationParams if present
+    burn_in = 0
+    try:
+        burn_in = int(getattr(results['parameters']['simulation'], 'metric_burn_in', 0))
+    except Exception:
+        burn_in = 0
+
+    # Basic stats
     final_gfp = driver_data['mean_gfp'][-1]
     final_temp = driver_data['temperature'][-1]
     initial_temp = driver_data['temperature'][0]
-    learning_score = (initial_temp - final_temp) / (initial_temp - 30.0)
-    learning_score = np.clip(learning_score, 0.0, 1.0)
-    temp_change = np.array(driver_data['temperature'])
-    target_temp = initial_temp - 0.5 * (initial_temp - final_temp)
+
+    # Learning score: normalized cooling toward base_temp
+    denom = max(initial_temp - 30.0, 1e-9)
+    learning_score = np.clip((initial_temp - final_temp) / denom, 0.0, 1.0)
+
+    # Adaptation time: time to cross halfway temperature (with burn-in)
+    temp_series = np.array(driver_data['temperature'])
+    time_series = np.array(driver_data['time'])
+    target_temp_mid = initial_temp - 0.5 * (initial_temp - final_temp)
     adaptation_time = None
-    for i, temp in enumerate(temp_change):
-        if temp <= target_temp:
-            adaptation_time = driver_data['time'][i]
+    for tm, temp in zip(time_series, temp_series):
+        if tm < burn_in:
+            continue
+        if temp <= target_temp_mid:
+            adaptation_time = float(tm)
             break
+
+    # Establishment time: first time high-GFP fraction >= 0.5 (with burn-in)
     high_gfp_fractions = np.array(driver_data['high_gfp_fraction'])
     establishment_time = None
-    for i, frac in enumerate(high_gfp_fractions):
+    for tm, frac in zip(time_series, high_gfp_fractions):
+        if tm < burn_in:
+            continue
         if frac >= 0.5:
-            establishment_time = driver_data['time'][i]
+            establishment_time = float(tm)
             break
-    final_portion = int(0.8 * len(driver_data['temperature']))
-    final_temps = driver_data['temperature'][final_portion:]
+
+    # Temperature stability over final 20% of the run
+    final_portion = int(0.8 * len(temp_series))
+    final_temps = temp_series[final_portion:] if final_portion < len(temp_series) else temp_series[-1:]
     temp_stability = 1.0 / (1.0 + np.var(final_temps))
+
     return {
-        'learning_score': learning_score,
-        'final_gfp': final_gfp,
-        'final_temperature': final_temp,
+        'learning_score': float(learning_score),
+        'final_gfp': float(final_gfp),
+        'final_temperature': float(final_temp),
         'adaptation_time': adaptation_time,
         'establishment_time': establishment_time,
-        'temperature_stability': temp_stability,
-        'final_high_gfp_fraction': driver_data['high_gfp_fraction'][-1]
+        'temperature_stability': float(temp_stability),
+        'final_high_gfp_fraction': float(driver_data['high_gfp_fraction'][-1])
     }
 
 def export_results_to_dataframe(results: Dict[str, Any]) -> pd.DataFrame:
@@ -353,7 +451,10 @@ def export_results_to_dataframe(results: Dict[str, Any]) -> pd.DataFrame:
         'driver_high_frac': driver_data['high_gfp_fraction'],
         'driver_pop_size': driver_data['population_size'],
         'control_30_gfp': results['control_30']['mean_gfp'],
-        'control_39_gfp': results['control_39']['mean_gfp']
+        'control_39_gfp': results['control_39']['mean_gfp'],
+        # NEW: include control temperatures to verify constancy
+        'control_30_temp': results['control_30']['temperature'],
+        'control_39_temp': results['control_39']['temperature'],
     }
     for i, passive_data in enumerate(results['passives']):
         df_data[f'passive_{i+1}_gfp'] = passive_data['mean_gfp']
@@ -383,24 +484,37 @@ def validate_parameters(sim_params: SimulationParams, gfp_params: GFPParams) -> 
         warnings.append("⚠️ High GFP cost may prevent high expression")
     if gfp_params.switch_prob_base > 0.1:
         warnings.append("⚠️ High switching rate may cause noise")
+    if not (0.0 < sim_params.temp_inertia <= 1.0):
+        warnings.append("⚠️ temp_inertia should be in (0, 1].")
+    if sim_params.base_temp != 30.0 or sim_params.max_temp != 39.0:
+        warnings.append("ℹ️ Controls are fixed at 30°C/39°C; driver feedback range differs from controls.")
     return warnings
 
 if __name__ == "__main__":
-    print("🧬 Evolutionary Learning Simulation - Core Module")
+    print("🧬 Evolutionary Learning Simulation - Core Module (Moran)")
     print("=" * 50)
-    sim_params = SimulationParams(total_time=500, population_size=300,
-                                  feedback_mode="linear", feedback_sensitivity=1.0)
+    sim_params = SimulationParams(
+        total_time=500,
+        population_size=300,
+        feedback_mode="linear",
+        feedback_sensitivity=1.8,
+        temp_inertia=0.25,
+        start_at_max_temp=True,
+        metric_burn_in=10,
+        random_seed=42
+    )
     gfp_params = GFPParams(cost_strength=0.3, switch_prob_base=0.01)
     warnings = validate_parameters(sim_params, gfp_params)
     if warnings:
         print("Validation warnings:")
         for warning in warnings:
             print(f"  {warning}")
-    print("\nRunning quick test simulation...")
-    results = run_evolution_experiment(sim_params, gfp_params, "continuous")
+    print("\nRunning quick test simulation (strict Moran BD updates)...")
+    results = run_evolution_experiment(sim_params, gfp_params, "binary")
     metrics = calculate_learning_metrics(results)
     print(f"\nTest Results:")
     print(f"  Learning Score: {metrics.get('learning_score', 0):.2f}")
     print(f"  Final GFP: {metrics.get('final_gfp', 0):.1f}")
     print(f"  Final Temperature: {metrics.get('final_temperature', 39):.1f}°C")
-    print("\n✅ Core module test completed successfully!")
+    print(f"  Adaptation Time (w/ burn-in): {metrics.get('adaptation_time', None)} min")
+    print("\n✅ Core module (Moran) test completed successfully!")
