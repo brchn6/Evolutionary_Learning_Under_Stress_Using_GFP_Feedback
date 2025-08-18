@@ -4,3 +4,4 @@ __pycache__/
 results/
 *.log
 *.ipynb
+*.egg-info/

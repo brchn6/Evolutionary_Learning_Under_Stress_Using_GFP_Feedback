@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.graph_objs as go
 import json
 
-from main import (
+from src.main import (
     run_simulation,
     run_simulation_with_external_temperature,
     feedback_temperature,
