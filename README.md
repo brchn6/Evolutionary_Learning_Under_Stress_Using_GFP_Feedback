@@ -1,35 +1,33 @@
-# 🧬 Evolutionary Learning Laboratory
+# 🧬 Evolutionary Learning Laboratory (Moran Process)
 
-**Interactive simulation platform for studying temperature-feedback driven adaptation in synthetic yeast populations**
+**Interactive simulation of temperature-feedback–driven adaptation in synthetic yeast populations**
 
-This bioinformatics tool implements both binary and continuous GFP expression modes with Moran process dynamics to explore how microbial populations can "learn" through environmental feedback mechanisms. Based on real experimental designs in synthetic biology, it provides a powerful platform for understanding evolutionary adaptation without cognition.
+This app models evolutionary “learning” via a **strict Moran (birth–death)** process where each time step performs **exactly one birth and one death**, keeping population size constant. A feedback controller cools the environment as the population’s mean GFP rises. **Control wells are hard-coded to 30°C and 39°C** for the entire run.
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Start
 
-### 1️⃣ Installation
+### Requirements
+
+* Python 3.9–3.11
+* macOS/Linux/Windows
+
+### Install & Run
+
 ```bash
-# Clone or download the files
-git clone <your-repo> # or download manually
+# Clone
+git clone <your-repo>
+cd evolutionary-learning
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Launch the application
+# Launch the Streamlit app
 streamlit run app.py
 ```
 
-### 2️⃣ First Run
-1. **Open browser** at `http://localhost:8501`
-2. **Use default parameters** for your first experiment
-3. **Click "🚀 Run Evolution Experiment"**
-4. **Explore results** in the interactive dashboard
-
-### 3️⃣ Understand Results
-- **Learning Score > 0.7**: Excellent adaptation! 🎉
-- **Learning Score 0.3-0.7**: Moderate learning ⚠️
-- **Learning Score < 0.3**: Poor adaptation ❌
+Then open your browser at `http://localhost:8501`, keep defaults, click **“🚀 Run Evolution Experiment”**, and explore the dashboard.
 
 ---
 
@@ -37,268 +35,222 @@ streamlit run app.py
 
 ```
 evolutionary-learning/
-├── 📄 main.py              # Core simulation engine & biological models
-├── 🎨 app.py               # Interactive Streamlit interface  
-├── 📋 requirements.txt     # Python dependencies
-├── 📖 README.md           # This comprehensive guide
-└── 📊 results/            # Your downloaded experiment data
+├─ app.py                   # Streamlit UI
+├─ src/
+│  └─ main.py               # Core engine: strict Moran BD, models, utilities
+├─ requirements.txt         # Dependencies
+└─ README.md                # This guide
 ```
 
----
-
-## 🧬 Scientific Background
-
-### The Experimental System
-This simulation models a **synthetic biology experiment** where yeast cells (S. cerevisiae) are engineered to link GFP expression with environmental temperature feedback:
-
-- **🎯 Driver Well**: GFP expression directly controls temperature (learning enabled)
-- **🔄 Passive Wells**: Follow driver temperature but cannot influence it (learning disabled)  
-- **🔬 Control Wells**: Fixed at 30°C (optimal) and 39°C (stress) temperatures
-- **⚖️ Moran Process**: Constant population size with fitness-proportional reproduction
-- **💰 Fitness Cost**: High GFP expression slows cell division (metabolic burden)
-
-### Key Biological Processes
-1. **Temperature Feedback**: Higher mean GFP → Cooler environment (reward)
-2. **Fitness Trade-off**: GFP expression costs energy → Slower division
-3. **Stress Response**: Hot temperatures → Increased GFP switching probability
-4. **Inheritance**: Daughter cells inherit mother's GFP ± noise
-5. **Selection**: Faster-dividing cells have more offspring
+> The UI imports the engine via `from src.main import ...`.
 
 ---
 
-## 🎛️ Parameter Guide & Recommendations
+## 🧠 What’s New / Key Behavior
+
+* **Strict Moran updates:** every step = **1 fitness-proportional birth + 1 uniform death**.
+* **Controls locked:** 30.0°C and 39.0°C **forever** (no feedback, no smoothing, no startup logic).
+* **Driver only uses feedback + inertia:** optional first-minute hold and smoothing.
+* **Exports include control temperatures** for easy verification.
+* **Generation-time landscape** plot derived from the exact model equations.
+* **Metrics burn-in** to ignore early transients.
+
+---
+
+## 🖥️ App Features
+
+* **Driver, Passives, Controls:**
+
+  * **Driver**: experiences temperature set by GFP→Temp feedback.
+  * **Passives**: experience the **same temperature** as the driver but **do not influence it**.
+  * **Controls**: **30°C** and **39°C** constant every step.
+* **Modes:** `continuous` or `binary` GFP expression.
+* **Plots:** Temperature & GFP time series, feedback curve vs. trajectory, learning progress, and a generation-time heatmap.
+* **Downloads:** CSV time series, JSON parameters + metrics, and raw JSON.
+
+---
+
+## 🎛️ Parameters (UI ranges & effects)
 
 ### 🔬 Core Experimental Setup
 
-| Parameter           | Recommended Range        | Purpose            | Effect                                   |
-| ------------------- | ------------------------ | ------------------ | ---------------------------------------- |
-| **GFP Mode**        | `continuous` or `binary` | Expression type    | Continuous = realistic, Binary = cleaner |
-| **Simulation Time** | `1000-2000 min`          | Evolution duration | Longer = more adaptation time            |
-| **Population Size** | `200-500 cells`          | Well capacity      | Larger = less genetic drift              |
-| **Passive Wells**   | `3-5 wells`              | Statistical power  | More = better controls                   |
+| UI Control                  | Range (default)                        | Meaning                                     |
+| --------------------------- | -------------------------------------- | ------------------------------------------- |
+| **GFP Expression Mode**     | `continuous` / `binary` (`continuous`) | Trait model                                 |
+| **Simulation Time (min)**   | 200–3000 (**1000**)                    | Total minutes simulated                     |
+| **Time Step (min/event)**   | 1–10 (**1**)                           | Minutes per Moran event (1 birth + 1 death) |
+| **Population Size (cells)** | 50–800 (**200**)                       | Constant size via Moran BD                  |
+| **Number of Passive Wells** | 1–8 (**3**)                            | Passive replicates                          |
 
-### 🌡️ Temperature Feedback System
+### 🌡️ Temperature Feedback (Driver only)
 
-| Parameter             | Recommended           | Purpose           | Tips                                          |
-| --------------------- | --------------------- | ----------------- | --------------------------------------------- |
-| **Feedback Function** | `linear` or `sigmoid` | Response curve    | Linear = simple, Sigmoid = realistic          |
-| **Sensitivity**       | `0.8-1.5`             | Response strength | Too low = no learning, Too high = instability |
+| UI Control               | Range (default)                                       | Notes                                     |
+| ------------------------ | ----------------------------------------------------- | ----------------------------------------- |
+| **Feedback Function**    | `linear`, `sigmoid`, `step`, `exponential` (`linear`) | GFP→Temp mapping                          |
+| **Feedback Sensitivity** | 0.2–4.0 (**1.0**)                                     | Higher → stronger cooling response        |
+| **Range**                | **30°C ↔ 39°C** (fixed)                               | Driver operates strictly within this span |
 
-### 🧬 Evolution & Fitness Parameters
+**Feedback function (engine):**
 
-| Parameter             | Conservative | Moderate | Aggressive | Effect                    |
-| --------------------- | ------------ | -------- | ---------- | ------------------------- |
-| **Inheritance Noise** | `3.0`        | `5.0`    | `10.0`     | Mutation-like variation   |
-| **Switching Rate**    | `0.005`      | `0.01`   | `0.03`     | Stress-induced adaptation |
-| **GFP Cost**          | `0.2`        | `0.3`    | `0.6`      | Selection pressure        |
-| **Cost Curvature**    | `1.0`        | `1.5`    | `2.5`      | Non-linear penalty        |
+```
+temperature = max_temp - cooling_factor * (max_temp - base_temp)
+```
+
+with different definitions of `cooling_factor` per mode (linear/sigmoid/step/exponential). Values are clipped to \[30, 39] °C.
+
+### 🧬 Evolution & Fitness
+
+> Internally maps to `GFPParams` (`inherit_sd`, `switch_prob_base`, `cost_strength`, `cost_exponent`)
+
+| UI Control                         | Range (default)       | Effect                                          |
+| ---------------------------------- | --------------------- | ----------------------------------------------- |
+| **Inheritance Noise (continuous)** | 1.0–20.0 (**5.0**)    | Daughter GFP = mother ± noise (continuous mode) |
+| **Stress-Induced Switching Rate**  | 0.001–0.08 (**0.01**) | Per-step, scaled up by heat                     |
+| **GFP Metabolic Cost**             | 0.0–1.2 (**0.3**)     | Higher GFP → slower division                    |
+| **Cost Function Curvature**        | 0.5–3.0 (**1.5**)     | Nonlinearity of the cost                        |
+
+**Generation time model (per cell):**
+
+* Base vs. temperature:
+  `base_time = 60 + 120 * ((T−30)/9)^2` (clipped to 30–39°C → \[0,1])
+* Cost multiplier:
+
+  * **Continuous:** `1 + cost_strength * (gfp/100)^cost_exponent`
+  * **Binary:** `1.3` if GFP>50 else `1.0`
+* **Generation time = base\_time × cost\_multiplier**
+* **Fitness ∝ 1/generation\_time**
+
+### 🧊 Smoothing & Metrics (Driver)
+
+| UI Control               | Range (default)          | Notes                                            |
+| ------------------------ | ------------------------ | ------------------------------------------------ |
+| **Temperature Inertia**  | 0.05–1.0 (**0.25**)      | Smoother changes for lower values                |
+| **Start at Max Temp**    | toggle (**True**)        | First step holds 39°C; otherwise start at target |
+| **Metric Burn-in (min)** | 0–max(100, T/3) (**10**) | Ignore early window in metric calculations       |
+
+### ⚙️ Advanced
+
+| UI Control                  | Range (default)   | Notes                                             |
+| --------------------------- | ----------------- | ------------------------------------------------- |
+| **Random Seed**             | 1–999999 (**42**) | Reproducibility                                   |
+| **Show Parameter Warnings** | toggle (On)       | Validation hints (e.g., sensitivity too low/high) |
 
 ---
 
-## 🎯 Recommended Experiment Protocols
+## 📊 Metrics (what the app reports)
 
-### 🟢 **Experiment 1: Basic Learning (Beginners)**
-*Demonstrate clear evolutionary learning*
+From `calculate_learning_metrics`:
 
-```
-🔬 Core Setup:
-- GFP Mode: Continuous
-- Simulation Time: 1000 min
-- Population Size: 200
-- Passive Wells: 3
+* **learning\_score**: Normalized cooling from initial temp toward 30°C (0–1).
+* **final\_gfp**: Driver’s mean GFP at the end.
+* **final\_temperature**: Driver’s last temperature.
+* **adaptation\_time**: First time (after burn-in) that temperature crosses halfway between initial and final.
+* **establishment\_time**: First time (after burn-in) high-GFP fraction ≥ 0.5.
+* **temperature\_stability**: 1 / (1 + variance) over the last 20% of temps.
+* **final\_high\_gfp\_fraction**: Fraction of cells above threshold (binary: >50; continuous: >60).
 
-🌡️ Feedback:
-- Function: Linear  
-- Sensitivity: 1.0
+**Quick interpretation**
 
-🧬 Evolution:
-- Inheritance Noise: 5.0
-- Switching Rate: 0.01
-- GFP Cost: 0.3
-- Cost Curvature: 1.5
-```
-
-**Expected Result**: Clear temperature drop from 39°C to ~32°C, Learning Score > 0.6
+* **Learning Score > 0.7** → strong adaptation
+* **0.3–0.7** → moderate
+* **< 0.3** → weak
 
 ---
 
-### 🟡 **Experiment 2: Binary Switching (Intermediate)**
-*Explore discrete phenotype adaptation*
+## 🧪 Recommended Protocols
 
-```
-🔬 Core Setup:
-- GFP Mode: Binary
-- Simulation Time: 800 min
-- Population Size: 300
-- Passive Wells: 4
+### 🟢 Basic Learning (Beginner)
 
-🌡️ Feedback:
-- Function: Step
-- Sensitivity: 1.5
+* **Mode:** continuous
+* **Time:** 1000 min, **Pop:** 200, **Passives:** 3
+* **Feedback:** linear, **Sensitivity:** 1.0
+* **Evolution:** noise 5.0, switch 0.01, cost 0.3, curvature 1.5
+  **Expect:** Cooling into low 30s °C, learning\_score ≳ 0.6
 
-🧬 Evolution:
-- Inheritance Noise: 2.0 (less relevant for binary)
-- Switching Rate: 0.02
-- GFP Cost: 0.4
-- Cost Curvature: 1.0
-```
+### 🟡 Binary Switching (Intermediate)
 
-**Expected Result**: Rapid transition to high GFP state, Learning Score > 0.7
+* **Mode:** binary
+* **Time:** 800 min, **Pop:** 300, **Passives:** 4
+* **Feedback:** step, **Sensitivity:** 1.5
+* **Evolution:** (inheritance noise not crucial), switch 0.02, cost 0.4, curvature 1.0
+  **Expect:** Rapid transition, learning\_score ≳ 0.7
 
----
+### 🔴 Challenging Conditions (Advanced)
 
-### 🔴 **Experiment 3: Challenging Conditions (Advanced)**
-*Test limits of adaptation*
+* **Mode:** continuous
+* **Time:** 1500 min, **Pop:** 500, **Passives:** 5
+* **Feedback:** sigmoid, **Sensitivity:** 0.6
+* **Evolution:** noise 8.0, switch 0.008, cost 0.5, curvature 2.0
+  **Expect:** Slower adaptation, learning\_score ≈ 0.3–0.6
 
-```
-🔬 Core Setup:
-- GFP Mode: Continuous
-- Simulation Time: 1500 min
-- Population Size: 500
-- Passive Wells: 5
+### 🔵 Failure Mode Analysis
 
-🌡️ Feedback:
-- Function: Sigmoid
-- Sensitivity: 0.6 (reduced!)
+* **Mode:** continuous
+* **Time:** 1000 min, **Pop:** 150, **Passives:** 3
+* **Feedback:** linear, **Sensitivity:** 0.3
+* **Evolution:** noise 15.0, switch 0.003, cost 0.8, curvature 2.5
+  **Expect:** Likely failure (score < 0.3). Great for sensitivity analysis.
 
-🧬 Evolution:
-- Inheritance Noise: 8.0
-- Switching Rate: 0.008
-- GFP Cost: 0.5 (high cost!)
-- Cost Curvature: 2.0
-```
+### ⚡ Rapid Learning (Expert)
 
-**Expected Result**: Slower adaptation, Learning Score 0.3-0.6, more realistic dynamics
+* **Mode:** binary
+* **Time:** 500 min, **Pop:** 400, **Passives:** 3
+* **Feedback:** exponential, **Sensitivity:** 2.0
+* **Evolution:** noise 1.0, switch 0.04, cost 0.2, curvature 1.0
+  **Expect:** Very fast adaptation (score > 0.8), short adaptation\_time.
 
 ---
 
-### 🔵 **Experiment 4: Failure Mode Analysis**
-*Understand when learning fails*
+## 📥 Data Export
 
-```
-🔬 Core Setup:
-- GFP Mode: Continuous
-- Simulation Time: 1000 min
-- Population Size: 150 (small!)
-- Passive Wells: 3
-
-🌡️ Feedback:
-- Function: Linear
-- Sensitivity: 0.3 (very low!)
-
-🧬 Evolution:
-- Inheritance Noise: 15.0 (high noise!)
-- Switching Rate: 0.003 (low switching!)
-- GFP Cost: 0.8 (very high cost!)
-- Cost Curvature: 2.5
-```
-
-**Expected Result**: Learning failure, Learning Score < 0.3, demonstrates parameter sensitivity
+* **CSV (Time Series):** driver/passives/controls GFP, driver temp, control temps (for constant-temp verification), high-GFP fractions, population size.
+* **JSON (Parameters & Metrics):** full simulation and GFP params + summary metrics.
+* **JSON (Raw):** complete per-well histories and final distributions.
 
 ---
 
-### ⚡ **Experiment 5: Rapid Learning (Expert)**
-*Optimize for fastest adaptation*
+## 🔍 Troubleshooting & Validation
 
-```
-🔬 Core Setup:
-- GFP Mode: Binary
-- Simulation Time: 500 min
-- Population Size: 400
-- Passive Wells: 3
+The app warns when parameters are likely problematic:
 
-🌡️ Feedback:
-- Function: Exponential
-- Sensitivity: 2.0
+* **Very low sensitivity** → “may prevent learning”
+* **Very high sensitivity** → “may cause instability”
+* **High GFP cost or switching** → noise/slow growth
+* **Small populations or short runs** → drift/under-adaptation
+* **temp\_inertia outside (0,1]** → invalid
 
-🧬 Evolution:
-- Inheritance Noise: 1.0
-- Switching Rate: 0.04
-- GFP Cost: 0.2
-- Cost Curvature: 1.0
+**Remember:** Only the **driver** uses feedback + inertia. **Controls** are **always 30°C** and **39°C**; **passives** simply **follow the driver temperature** with no influence.
+
+---
+
+## 🔬 Tips for Study Design
+
+* Compare **binary vs. continuous** under the same settings.
+* Sweep **sensitivity** (0.2, 0.5, 1.0, 1.5, 2.0, 4.0).
+* Vary **population size** (100–800) for drift effects.
+* Run **replicates** with different **random\_seed** values and aggregate.
+* Use **metric\_burn\_in** (e.g., 10–100 min) to avoid startup artefacts.
+
+---
+
+## 🧪 CLI Smoke Test (optional)
+
+The core module includes a simple test in `src/main.py`:
+
+```bash
+python -m src.main
 ```
 
-**Expected Result**: Very rapid adaptation, Learning Score > 0.8, adaptation time < 200 min
+It runs a short binary-mode simulation and prints key metrics.
 
 ---
 
-## 📊 Understanding Your Results
+## 📜 License & Citation
 
-### 🎯 Key Metrics Interpretation
-
-| Metric                | Excellent | Good        | Poor      | What It Means              |
-| --------------------- | --------- | ----------- | --------- | -------------------------- |
-| **Learning Score**    | > 0.7     | 0.4-0.7     | < 0.4     | Overall adaptation success |
-| **Adaptation Time**   | < 300 min | 300-600 min | > 600 min | Speed of learning          |
-| **Final Temperature** | < 32°C    | 32-35°C     | > 35°C    | Cooling achieved           |
-| **High GFP Fraction** | > 0.7     | 0.4-0.7     | < 0.4     | Population success         |
-| **Tracking Error**    | < 1°C     | 1-3°C       | > 3°C     | Feedback efficiency        |
-
-### 📈 Plot Interpretations
-
-1. **Temperature Evolution**: Should show steady cooling if learning occurs
-2. **GFP Comparison**: Driver should exceed passives/controls if learning works  
-3. **Phase Plot**: Should show directed movement toward bottom-right (high GFP, low temp)
-4. **Feedback Function**: Evolution path should follow theoretical curve
-5. **Population Dynamics**: High GFP fraction should increase over time
-
-### 🔍 Troubleshooting Guide
-
-| Problem                    | Likely Cause                    | Solution                               |
-| -------------------------- | ------------------------------- | -------------------------------------- |
-| **No temperature change**  | Sensitivity too low             | Increase sensitivity to 1.0+           |
-| **Wild oscillations**      | Sensitivity too high            | Decrease sensitivity to 0.5-1.0        |
-| **Slow adaptation**        | Low switching rate or high cost | Increase switching rate, reduce cost   |
-| **Learning then collapse** | Cost too high                   | Reduce GFP cost to < 0.5               |
-| **No GFP increase**        | Cost overwhelming benefit       | Reduce cost or increase sensitivity    |
-| **Noisy dynamics**         | Small population or high noise  | Increase population size, reduce noise |
+* Choose an open-source license appropriate for your project.
+* If you use this in a publication, please cite the repository and include the **strict Moran** and **fixed-controls** details.
 
 ---
 
-## 🧪 Advanced Experiments
-
-### Comparative Studies
-- **Mode Comparison**: Run identical parameters with binary vs continuous
-- **Function Testing**: Compare linear vs sigmoid vs exponential feedback
-- **Sensitivity Sweep**: Test 0.2, 0.5, 1.0, 1.5, 2.0 sensitivity values
-- **Population Effects**: Try 100, 200, 500, 1000 population sizes
-
-### Research Questions
-1. **Which feedback function produces most stable learning?**
-2. **How does population size affect adaptation speed?**
-3. **What's the minimum sensitivity required for learning?**
-4. **Does binary mode learn faster than continuous?**
-5. **How much GFP cost can populations overcome?**
-
-### Statistical Analysis
-- **Run multiple replicates** (change random seed)
-- **Calculate confidence intervals** from passive wells
-- **Measure adaptation time distributions**
-- **Quantify learning curve shapes**
-
---- 
-
-## 🏆 Success Stories & Benchmarks
-
-### Typical Successful Experiments
-- **Strong Learning**: Score 0.75, Adaptation in 400 min, Final temp 31°C
-- **Moderate Learning**: Score 0.55, Adaptation in 700 min, Final temp 34°C  
-- **Binary Success**: Score 0.80, Rapid switch at 250 min, Final temp 30.5°C
-
-### Publication-Quality Results
-For academic use, aim for:
-- **Multiple replicates** (n≥5) with different random seeds
-- **Systematic parameter variations** 
-- **Statistical significance testing**
-- **Control comparisons** (driver vs passive vs fixed temperature)
-- **Mechanistic interpretation** of adaptation strategies
-
-
----
-
-**🧬 Happy Experimenting! Welcome to the fascinating world of evolutionary learning! ✨**
-
-*For questions, suggestions, or collaboration opportunities, please reach out to the development team.*
-
----
-*Last Updated: 2024 | Version: 1.0 | Status: Production Ready*
+**Happy experimenting!** If you have questions or want to collaborate, open an issue or reach out.
+*Last Updated: 2025 • Status: Active*
