@@ -294,19 +294,7 @@ It runs a short binary-mode simulation and prints key metrics.
 
 ---
 
-## 📜 License & Citation
-
-* Choose an open-source license appropriate for your project.
-* If you use this in a publication, please cite the repository and include the **strict Moran** and **fixed-controls** details.
-
----
-
-**Happy experimenting!** If you have questions or want to collaborate, open an issue or reach out.
-*Last Updated: 2025 • Status: Active*
-
----
-
-## 🧾 Results interpretation: current behavior vs. reality
+# 🧾 Results interpretation: current behavior vs. reality
 
 ### Your observed outcomes (from the app)
 - The 39 °C control reaches and maintains the highest GFP.
@@ -333,7 +321,6 @@ If we want the 39 °C control to rise then drop (more realistic), we can try t
 - Temperature-dependent global cost: scale the cost multiplier up with temperature to reflect broad expression slow-downs.
 - Damage/aging state: accumulate stress-induced damage that reduces division rate or increases death probability over time at high temperatures.
 - Resource limits: impose carrying-capacity or energy budget constraints that penalize sustained high GFP under stress.
-
 
 
 --- 
