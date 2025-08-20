@@ -1,0 +1,3 @@
+Learning score: 0.31; Final temp: 36.2°C; Final driver GFP: 70.4
+Moderate cooling; parameters allow some adaptation but not strong.
+39°C control > 30°C control, consistent with heat-induced switching/selection.

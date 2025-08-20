@@ -1,0 +1,9 @@
+{
+  "learning_score": 0.9502129316321357,
+  "final_gfp": 62.45,
+  "final_temperature": 30.44808361531078,
+  "adaptation_time": 10.0,
+  "establishment_time": null,
+  "temperature_stability": 1.0,
+  "final_high_gfp_fraction": 0.4575
+}

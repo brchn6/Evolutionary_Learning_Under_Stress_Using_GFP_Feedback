@@ -1,0 +1,3 @@
+Learning score: 1.00; Final temp: 30.0°C; Final driver GFP: 40.4
+Driver cooled substantially; indicates good feedback-driven adaptation.
+39°C control > 30°C control, consistent with heat-induced switching/selection.
