@@ -155,6 +155,55 @@ From `calculate_learning_metrics`:
 * **0.3–0.7** → moderate
 * **< 0.3** → weak
 
+--- 
+
+## 📐 How Metrics Are Calculated
+
+Metrics are computed in `calculate_learning_metrics` (see `src/main.py`) and summarize the driver well’s adaptation. Here is how each key variable is derived:
+
+* **`learning_score`**
+  Measures how much the driver cooled relative to its starting temperature.
+
+  $$
+  \text{learning\_score} = \frac{\text{initial\_temp} - \text{final\_temp}}{\max(\text{initial\_temp} - 30.0,\; 1\text{e-9})}
+  $$
+
+  Normalized between **0 (no cooling)** and **1 (full cooling to 30°C)**.
+
+* **`final_gfp`**
+  The driver’s **mean GFP value at the last time step**.
+
+* **`final_temperature`**
+  The driver’s **last recorded temperature** in the simulation.
+
+* **`adaptation_time`**
+  The **first time (after burn-in)** that the driver’s temperature drops below the halfway point between its initial and final temperature:
+
+  $$
+  T_{\text{mid}} = \text{initial\_temp} - 0.5 \times (\text{initial\_temp} - \text{final\_temp})
+  $$
+
+  The earliest time where $T(t) \leq T_{\text{mid}}$ is reported.
+
+* **`establishment_time`**
+  The **first time (after burn-in)** that the driver’s high-GFP fraction reaches or exceeds 0.5 (≥50% of cells above threshold).
+
+* **`temperature_stability`**
+  Computed as:
+
+  $$
+  \text{temperature\_stability} = \frac{1}{1 + \mathrm{Var}(T_{\text{last 20\%}})}
+  $$
+
+  A value closer to **1** indicates more stable temperatures in the final phase.
+
+* **`final_high_gfp_fraction`**
+  The **fraction of driver cells** at the last time step with GFP above threshold:
+
+  * continuous mode → GFP > 60
+  * binary mode → GFP > 50.
+
+
 ---
 
 ## 🧪 Recommended Protocols
