@@ -6,6 +6,24 @@ This app models evolutionary “learning” via a **strict Moran (birth–death)
 
 ---
 
+# 📚 Course Context & Submission Info
+
+This repository is part of the course:
+
+**Evolution through Programming  Final Project**
+
+### 📝 Submission Details
+- **Bar Cohen**  
+- **Dan Weinberg**  
+- **Benell Levy**
+
+### 📊 Results
+The full set of **simulation results, metrics, and interpretation** for the submitted project can be found in the section:  
+➡️ [Results interpretation: current behavior vs. reality](#-results-interpretation-current-behavior-vs-reality) section for a discussion of why the observed outcomes appear as they do.
+That section includes the reported learning scores, final GFP levels, adaptation times, and plots for each of the tested experimental protocols.
+
+---
+
 ## 🚀 Quick Start
 
 ### Requirements
