@@ -266,9 +266,9 @@ It runs a short binary-mode simulation and prints key metrics.
 
 ### Why the current model produces this
 This app uses a strict Moran process (exactly 1 birth + 1 death per step; population fixed). Fitness is inversely related to generation time, and heat increases switching toward high-GFP states. Under these assumptions:
-- At constant 39 °C, stress both increases switching into high GFP and can select for high GFP phenotypes, so the population tends to maintain high GFP.
-- The driver and passives share the same temperature each step; passives simply track the driver’s environment without feeding back—so their trajectories can be very similar.
-- At constant 30 °C, there’s minimal pressure toward high GFP and lower switching, so GFP stays low.
+- At constant 39 °C, stress increases switching since we defined a stress-induced high switching rate. If we drop that to zero - all wells get to a very low gfp level.
+- The driver and passives share the same temperature each step; passives simply track the driver’s environment without feeding back, plus they are doing the exact same moran process — so their trajectories can be very similar.
+- At constant 30 °C, there’s minimal switching of GFP levels, and the generation time is minimal, so GFP stays low.
 
 ### Why experiments can differ
 Real systems often deviate from strict Moran assumptions and include biophysical effects not modeled here:
@@ -277,17 +277,10 @@ Real systems often deviate from strict Moran assumptions and include biophysical
 - Heat-accelerated GFP degradation/maturation changes: faster decay or slower proper folding at high temperature can lower steady-state GFP despite selection.
 - Additional resource and damage constraints: sustained stress can accumulate damage, lower fitness broadly, or reprioritize expression away from GFP.
 
-### Model extensions to better match reality
-If you want the 39 °C control to rise then drop (more realistic), consider these tweaks in the engine:
+### Suggestions for model extensions to better match reality
+If we want the 39 °C control to rise then drop (more realistic), we can try these tweaks in the engine:
 - Relax strict Moran: decouple birth/death events (allow k deaths without births), or use stochastic rates (e.g., Gillespie-style events) with temperature-dependent death rates.
 - Add explicit GFP dynamics: dGFP/dt = production − decay with temperature-dependent decay (and optional maturation delay); reduce production globally under stress.
 - Temperature-dependent global cost: scale the cost multiplier up with temperature to reflect broad expression slow-downs.
 - Damage/aging state: accumulate stress-induced damage that reduces division rate or increases death probability over time at high temperatures.
 - Resource limits: impose carrying-capacity or energy budget constraints that penalize sustained high GFP under stress.
-
-### Quick knobs you can try now (approximate effects)
-- Increase GFP metabolic cost and/or its curvature to penalize sustained high GFP.
-- Increase stress-induced switching and lower inheritance noise to produce sharper transitions but add decay (if implemented) to create a peak-then-fall.
-- Use stronger feedback sensitivity so the driver cools quickly; passives will still follow but can diverge if you introduce well-specific noise or costs.
-
-These changes can be added incrementally to the core in `src/main.py` to explore how each hypothesis (non-Moran dynamics, global dampening, heat-driven degradation) impacts the trajectories.
