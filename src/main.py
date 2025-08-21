@@ -46,14 +46,14 @@ class GFPParams:
     inherit_sd: float = 2.5
     # Switching probabilities (temperature dependent)
     switch_prob_base: float = 0.01
-    switch_boost_mean: float = 15.0
-    switch_boost_sd: float = 5.0
+    switch_boost_mean: float = 5.0
+    switch_boost_sd: float = 2.0
     # Fitness cost parameters
     cost_strength: float = 0.3
     cost_exponent: float = 1.5
     # Background dynamics
     drift_rate: float = 0.001
-    baseline_gfp: float = 10.0
+    baseline_gfp: float = 0.0
     noise_sd: float = 0.5
 
 @dataclass
@@ -198,9 +198,9 @@ class Population:
         """Initialize population with low GFP cells"""
         for _ in range(self.target_size):
             if self.mode == "binary":
-                initial_gfp = self.params.low_threshold
+                initial_gfp = self.params.baseline_gfp
             else:
-                initial_gfp = max(0, np.random.normal(self.params.baseline_gfp, 3.0))
+                initial_gfp = max(0, np.random.normal(self.params.baseline_gfp, 0.5))
             cell = Cell(initial_gfp, 0.0, self.mode)
             self.cells.append(cell)
 

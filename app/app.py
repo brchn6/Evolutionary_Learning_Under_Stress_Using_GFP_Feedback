@@ -284,11 +284,11 @@ def main():
     with st.sidebar.expander("🔬 **Core Experimental Setup**", expanded=True):
         mode = st.selectbox("GFP Expression Mode", ["continuous", "binary"], index=0,
                             help="Continuous: 0–100 with noise • Binary: High/Low with switching")
-        total_time = st.slider("Simulation Time (minutes)", 200, 3000, 1000, step=100)
+        total_time = st.slider("Simulation Time (minutes)", 200, 3000, 2000, step=100)
         time_step = st.slider("Time Step (minutes per Moran event)", 1, 10, 1, step=1,
                               help="One Moran event (1 birth + 1 death) occurs each step.")
-        population_size = st.slider("Population Size (cells)", 50, 800, 200, step=25)
-        num_passives = st.slider("Number of Passive Wells", 1, 8, 3, step=1)
+        population_size = st.slider("Population Size (cells)", 50, 800, 400, step=25)
+        num_passives = st.slider("Number of Passive Wells", 1, 8, 5, step=1)
 
     with st.sidebar.expander("🌡️ **Temperature Feedback System (Driver)**", expanded=False):
         feedback_mode = st.selectbox("Feedback Function Type", ["linear", "sigmoid", "step", "exponential"], index=0)
